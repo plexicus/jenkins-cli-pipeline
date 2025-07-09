@@ -1,0 +1,5 @@
+
+# Tools to exclude from analysis
+excluded_tools:
+  - syft
+  - trivy-sbom
