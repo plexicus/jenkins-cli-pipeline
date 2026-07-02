@@ -1,5 +1,47 @@
+# Plexalyzer scan configuration
+# Place this file at .plexalyzer/custom_config.yml in the repository you want to scan.
+#
+# parse_config() in plexalyzer/analyze.py merges every key here (except the
+# reserved keys message_url and plexalyzer_token) directly into the scan
+# arguments.  Those two reserved keys MUST be supplied as environment variables
+# (PLEXALYZER_TOKEN and MESSAGE_URL) — not in this file.
+#
+# Valid individual tool names  (shared/tool_bundle_params.py  TOOL_CATEGORIES):
+#
+#   Category    Bundle name           Tool names
+#   ----------  --------------------  ------------------------------------
+#   SAST        plexicus-sast         opengrep, bandit
+#   SCA         plexicus-sca          grype
+#   Secrets     plexicus-secrets      gitleaks, trufflehog
+#   Container   plexicus-container    trivy-container
+#   IaC         plexicus-iac          checkov-iac, checkov-configuration,
+#                                     checkov-container
+#   CI/CD       plexicus-cicd         checkov-ci/cd
+#   Cloud       plexicus-cloud        cloudsploit
+#   DAST        plexicus-dast         nuclei
+#   Pentest     plexicus-pentest      strix
+#   SBOM        plexicus-sbom         syft
+#   AI BOM      plexicus-aibom        cdxgen-mlbom
+#   Crypto BOM  plexicus-cbom         cdxgen-cbom, opengrep-crypto
+#   License     plexicus-license      trivy-license
+#   SCM         plexicus-scm          chainbench
+#   Registry    plexicus-registry     trivy-registry
+#
+# You may use either individual tool names or bundle names in excluded_tools /
+# included_tools.
 
-# Tools to exclude from analysis
+# Tools to skip — remove entries you want to run.
 excluded_tools:
-  - syft
-  - trivy-sbom
+  - strix          # Pentest engine: slow, requires network access
+  - cloudsploit    # Cloud security: only useful when scanning cloud configs
+  - cdxgen-mlbom   # AI/ML BOM: only relevant for ML projects
+
+# Uncomment and populate to restrict the scan to specific tools only.
+# included_tools:
+#   - opengrep
+#   - bandit
+#   - grype
+#   - gitleaks
+#   - trufflehog
+#   - trivy-license
+#   - syft
