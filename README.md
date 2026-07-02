@@ -1,220 +1,205 @@
 # Plexalyzer Jenkins Pipeline
 
-A Jenkins pipeline for automated security analysis using Plexalyzer's comprehensive security scanning tools.
+A Jenkins pipeline for automated security analysis using the Plexicus Plexalyzer CLI.
 
-## 📋 Prerequisites
+## Prerequisites
 
-### Jenkins Requirements
+### Jenkins requirements
 
-1. **Jenkins Server** with Docker support
-2. **Docker-in-Docker (DinD) enabled** - This script is specifically designed to run on Jenkins with Docker-in-Docker capabilities
-   - Jenkins must be running in a Docker container with Docker socket mounted or DinD configured
-   - The Jenkins agent must have access to Docker daemon
-3. **AnsiColor Plugin** (Recommended) - For better terminal output visualization
-   - Install via: `Manage Jenkins` → `Plugins` → `Available` → Search for "AnsiColor"
-   - This plugin provides colored output in Jenkins console logs, making scan results more readable
+1. **Jenkins with Docker support** — the pipeline runs Plexalyzer inside a container.
+2. **Docker-in-Docker (DinD) or Docker socket mounted** — the Jenkins agent must be able to
+   execute `docker run`. The typical setup is to mount the host socket:
+   `-v /var/run/docker.sock:/var/run/docker.sock`
+3. **AnsiColor Plugin** (optional but recommended) — improves the readability of `pretty`
+   output. Install via **Manage Jenkins → Plugins → Available → AnsiColor**.
+4. **Git** — available on the Jenkins agent (used when `ONLY_GIT_CHANGES=true`).
 
-### System Requirements
+### Plexalyzer token
 
-- **Docker** installed and running on Jenkins agent
-- **Docker-in-Docker (DinD)** properly configured
-- **Git** access to your repository
-- **Plexalyzer token** (obtained from [Plexicus](https://app.plexicus.ai/))
+The pipeline authenticates with the Plexicus backend using a **Plexalyzer Token** — a
+short-lived JWT issued by the platform.
 
-> **Important**: This pipeline script is specifically designed for Jenkins environments running with Docker and Docker-in-Docker capabilities. It uses Docker volume mounting and container orchestration that requires proper DinD setup.
+**How to generate a token:**
 
-## 🏗️ Repository Setup
+1. Log in to the Plexicus dashboard (`https://app.plexicus.ai` or your self-hosted URL).
+2. Navigate to **Settings → Plexalyzer Token**.
+3. Click **Create token**, enter a name and optional expiry date, and click **Submit**.
+4. Click **Copy token** next to the new entry.
 
-### Required Directory Structure
+**How to store the token in Jenkins:**
 
-Your repository **must** contain a `.plexalyzer` directory with the following files:
+1. Go to **Manage Jenkins → Credentials → (Global) → Add Credentials**.
+2. Kind: **Secret text**.
+3. Secret: paste the token.
+4. ID: `plexalyzer-token`.
+5. Description: `Plexalyzer API Token`.
+6. Click **Save**.
+
+## Repository structure
+
+Your repository (the one being scanned) must contain:
 
 ```
 .plexalyzer/
-├── jenkins-plexalyzer-cli.groovy  # Jenkins pipeline script
-└── custom_config.yml              # Plexalyzer configuration
+├── jenkins-plexalyzer-cli.groovy   # Jenkins pipeline script (canonical path)
+└── custom_config.yml               # Scan configuration (tool selection)
 ```
 
-### Configuration Files
+The root `Jenkinsfile` is a convenience entry point that loads the canonical script.
 
-#### 1. `custom_config.yml`
-This file controls which security tools are included/excluded from analysis:
+## Jenkins pipeline setup
 
-```yaml
-# Tools to exclude from analysis
-excluded_tools:
-  - syft
-  - trivy-sbom
-  - bandit
-  - trivy-sca
-  - opengrep
-  - kics-container
-  - trivy-license
+### Step 1: Create a Pipeline job
 
-# Tools to specifically include (optional)
-# included_tools:
-#   - opengrep
-#   - kics
-#   - hadolint
-```
+1. Jenkins Dashboard → **New Item** → enter a name → **Pipeline** → **OK**.
+2. Scroll to the **Pipeline** section.
+3. Definition: **Pipeline script from SCM**.
+4. SCM: **Git** — enter your repository URL and credentials.
+5. Script Path:
+   - **Recommended:** `Jenkinsfile` (root convenience wrapper)
+   - **Alternative:** `.plexalyzer/jenkins-plexalyzer-cli.groovy` (canonical script)
+6. Click **Save**.
 
-#### 2. `jenkins-plexalyzer-cli.groovy`
-The main Jenkins pipeline script that orchestrates the security analysis.
+### Step 2: Run the pipeline
 
-## 🔧 Jenkins Setup
+Click **Build with Parameters** and configure the options below.
 
-### Step 1: Configure Credentials
-
-1. Go to `Manage Jenkins` → `Credentials`
-2. Select appropriate domain (usually `Global`)
-3. Click `Add Credentials`
-4. Choose `Secret text` as the kind
-5. Enter your Plexalyzer token in the `Secret` field
-6. Set the ID to `plexalyzer-token`
-7. Add description: "Plexalyzer API Token"
-8. Save the credential
-
-### Step 2: Create Jenkins Pipeline
-
-1. **Navigate to Jenkins Dashboard**
-2. **Create New Item**:
-   - Click `New Item`
-   - Enter item name (e.g., "plexalyzer-security-scan")
-   - Select `Pipeline`
-   - Click `OK`
-
-3. **Configure Pipeline**:
-   - Scroll down to `Pipeline` section
-   - Select `Pipeline script from SCM`
-   - Choose `Git` as SCM
-   - Enter your repository URL
-   - Set credentials if repository is private
-   - Specify branch (default: `main`)
-   - **Script Path**: `.plexalyzer/jenkins-plexalyzer-cli.groovy`
-
-4. **Save Configuration**
-
-### Step 3: Pipeline Parameters
-
-The pipeline supports the following parameters:
+## Pipeline parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `PROJECT_NAME` | String | `simplest-jenkins` | Name of the project being analyzed |
-| `BRANCH_NAME` | String | `main` | Git branch to analyze |
-| `OUTPUT_FORMAT` | Choice | `pretty` | Output format (`pretty`, `json`, `sarif`) |
-| `DEFAULT_OWNER` | String | `plexicus` | Default owner for the analysis |
-| `REPOSITORY_ID` | String | _(empty)_ | Specific repository ID |
-| `AUTONOMOUS_SCAN` | Boolean | `false` | Enable autonomous scanning mode |
-| `ONLY_GIT_CHANGES` | Boolean | `false` | Analyze only changed files in Git |
-| `PROGRESS_BAR` | Boolean | `true` | Show progress bar during analysis |
+| `PROJECT_NAME` | String | `my-project` | Name shown in the Plexicus dashboard |
+| `BRANCH_NAME` | String | `main` | Branch label attached to findings |
+| `OUTPUT_FORMAT` | Choice | `pretty` | `pretty` (console) · `json` · `sarif` |
+| `DEFAULT_OWNER` | String | `plexicus` | Default owner label for findings |
+| `REPOSITORY_ID` | String | _(empty)_ | Existing repository ID; blank = auto-register |
+| `AUTONOMOUS_SCAN` | Boolean | `false` | Enable autonomous AI remediation mode |
+| `ONLY_GIT_CHANGES` | Boolean | `false` | Scan only files changed since the last commit |
+| `PROGRESS_BAR` | Boolean | `true` | Show progress bar (disable for cleaner CI logs) |
+| `PLEXICUS_URL` | String | `https://app.plexicus.ai` | Base URL of your Plexicus instance |
 
-## 🚀 Usage
+## Scan configuration (`custom_config.yml`)
 
-### Running a Full Repository Scan
+All keys in this file (except the reserved `message_url` and `plexalyzer_token`) are
+passed directly to the Plexalyzer CLI.  Use `excluded_tools` or `included_tools` to
+control which security tools run.
 
-1. Navigate to your Jenkins pipeline job
-2. Click `Build with Parameters`
-3. Configure parameters as needed
-4. Click `Build`
+**Valid tool names** (source: `shared/tool_bundle_params.py` `TOOL_CATEGORIES`):
 
-### Running Incremental Analysis
+| Category | Bundle | Individual tools |
+|----------|--------|-----------------|
+| SAST | `plexicus-sast` | `opengrep`, `bandit` |
+| SCA | `plexicus-sca` | `grype` |
+| Secrets | `plexicus-secrets` | `gitleaks`, `trufflehog` |
+| Container | `plexicus-container` | `trivy-container` |
+| IaC | `plexicus-iac` | `checkov-iac`, `checkov-configuration`, `checkov-container` |
+| CI/CD | `plexicus-cicd` | `checkov-ci/cd` |
+| Cloud | `plexicus-cloud` | `cloudsploit` |
+| DAST | `plexicus-dast` | `nuclei` |
+| Pentest | `plexicus-pentest` | `strix` |
+| SBOM | `plexicus-sbom` | `syft` |
+| AI BOM | `plexicus-aibom` | `cdxgen-mlbom` |
+| Crypto BOM | `plexicus-cbom` | `cdxgen-cbom`, `opengrep-crypto` |
+| License | `plexicus-license` | `trivy-license` |
+| SCM | `plexicus-scm` | `chainbench` |
+| Registry | `plexicus-registry` | `trivy-registry` |
 
-To analyze only changed files:
-
-1. Set `ONLY_GIT_CHANGES` to `true`
-2. The pipeline will automatically detect changed files from the last commit
-3. Only modified files will be analyzed
-
-### Monitoring Results
-
-- **Console Output**: View real-time analysis progress
-- **Build Status**: 
-  - ✅ **Success**: No critical vulnerabilities found
-  - ⚠️ **Unstable**: Vulnerabilities found but build continues
-  - ❌ **Failed**: Critical errors or analysis failure
-- **Detailed Reports**: Available at [Plexicus Dashboard](https://app.plexicus.ai/repositories)
-
-## 📊 Understanding Results
-
-### Exit Codes
-
-| Exit Code | Status | Description |
-|-----------|--------|-------------|
-| `0` | Success | Scan completed successfully |
-| `1` | Success | Scan completed successfully |
-| `2` | Unstable | Vulnerabilities found |
-| `500` | Failed | Fatal error in analysis |
-
-### Output Formats
-
-- **Pretty**: Human-readable formatted output
-- **JSON**: Machine-readable JSON format
-- **SARIF**: Static Analysis Results Interchange Format
-
-## 🔍 Advanced Configuration
-
-### Custom Tool Configuration
-
-Modify `.plexalyzer/custom_config.yml` to customize tool behavior:
+Example `custom_config.yml`:
 
 ```yaml
-# Example: Configure specific tools
-semgrep_cli:
-  token: "your-semgrep-token"
+# Exclude slow / environment-specific tools
+excluded_tools:
+  - strix       # pentest engine — requires network access
+  - cloudsploit # cloud scanner — only relevant for cloud config repos
 
-nuclei:
-  application_url: "https://my-app.com"
-  authorization:
-    type: "bearer"
-    token: "your-bearer-token"
+# Or restrict to specific tools only:
+# included_tools:
+#   - opengrep
+#   - bandit
+#   - grype
+#   - gitleaks
+#   - trivy-license
 ```
 
-### Docker Configuration
+> **Note:** The tool names `trivy-sbom`, `trivy-sca`, and `kics-container` were used in
+> older versions of Plexalyzer and are no longer valid. Use `syft`, `grype`, and
+> `checkov-container` respectively.
 
-The pipeline uses the latest Plexalyzer Docker image:
-- **Image**: `plexicus/plexalyzer:latest`
-- **Auto-pull**: Latest version is downloaded automatically
+## Docker image
 
-## 🐛 Troubleshooting
+The pipeline uses the official public image:
 
-### Common Issues
+- **Image:** `plexicus/plexalyzer:latest`
+- **Registry:** Docker Hub (`hub.docker.com/r/plexicus/plexalyzer`)
+- **CLI entrypoint:** `python /app/analyze.py` (the image default CMD is the web server;
+  the pipeline overrides it with `--entrypoint python`)
 
-1. **Docker not available**
-   - Ensure Docker is installed on Jenkins agent
-   - Verify Docker daemon is running
+## Build results and exit codes
 
-2. **Docker-in-Docker (DinD) configuration issues**
-   - Ensure Jenkins is running with Docker socket mounted: `-v /var/run/docker.sock:/var/run/docker.sock`
-   - Or configure proper DinD setup with privileged containers
-   - Verify Jenkins agent has Docker access: `docker info` should work from Jenkins
-   - Check that `--volumes-from` flag works properly (used by the pipeline)
+| Exit code | Build status | Meaning |
+|-----------|-------------|---------|
+| `0` | Success | Scan completed — no findings |
+| `1` | Success | Scan completed — findings detected; review the dashboard |
+| `2` | Unstable | Reserved for future CLI versions |
+| `500` | Failure | Fatal error — wrong token or backend unreachable |
 
-3. **Credential errors**
-   - Check that `plexalyzer-token` credential exists
-   - Verify credential has correct permissions
+Exit codes 0 and 1 both indicate a successful scan. The difference is whether findings
+were detected; neither marks the build as failed by default.  To fail the build on
+findings, change `SUCCESS` to `FAILURE` in the `case 1` block of `handleExitCode()`.
 
-4. **Git repository issues**
-   - Ensure repository is properly initialized
-   - Check Git permissions and access
+For `json` and `sarif` output formats, the results are archived as build artefacts and
+also echoed to the console.
 
-5. **AnsiColor plugin issues**
-   - Plugin is optional but recommended
-   - Pipeline gracefully falls back to standard output
+## How it works
 
-### Debug Information
+1. **Prepare workspace** — creates `.plexalyzer/` and a default `custom_config.yml` if
+   none is committed.
+2. **Collect changed files** (when `ONLY_GIT_CHANGES=true`) — runs `git diff HEAD~1 HEAD`
+   and writes the file list to `.plexalyzer/changed_files.txt`.
+3. **Pull image** — runs `docker pull plexicus/plexalyzer:latest`.
+4. **Run scan** — executes:
+   ```
+   docker run --rm \
+     -v "${WORKSPACE}:/workspace" \
+     -v "${WORKSPACE}:/mounted_volumes" \
+     -w /workspace \
+     -e PLEXALYZER_TOKEN="..." \
+     -e MESSAGE_URL="https://app.plexicus.ai/plexalyzer-message-receipts" \
+     --entrypoint python \
+     plexicus/plexalyzer:latest \
+       /app/analyze.py --config ... --name ... --branch ... --output ...
+   ```
+   The `/workspace` mount is the scan root.  The `/mounted_volumes` mount is used by the
+   CLI to write back the repository ID after registration.
+5. **Archive results** — for `json`/`sarif` output formats only.
 
-Check the console output for detailed error messages and debugging information. The pipeline provides comprehensive logging for each step.
+## Troubleshooting
 
-## 📚 Additional Resources
+**`exit 500` — failed to create task**
+- Verify the `plexalyzer-token` credential is correct and not expired.
+- Confirm `PLEXICUS_URL` is reachable from the Jenkins agent: `curl -I <PLEXICUS_URL>`.
 
-- [Plexicus Platform](https://app.plexicus.ai/)
+**Docker not available**
+- Confirm Docker is installed on the agent: `docker --version`.
+- Confirm the Docker socket is mounted or DinD is configured.
+- Test with: `docker info`.
+
+**Shallow clone — no git history for `ONLY_GIT_CHANGES`**
+- The pipeline falls back to `git diff HEAD` automatically.
+- For a complete diff, configure your Jenkins SCM with depth > 1.
+
+**AnsiColor output not working**
+- Install the AnsiColor plugin (**Manage Jenkins → Plugins → AnsiColor**).
+- The `pretty` output format uses ANSI colour codes; without the plugin they appear as
+  raw escape sequences in the console.
+
+**Tool name not recognised**
+- Use only tool names from the table above.  The names `trivy-sbom`, `trivy-sca`, and
+  `kics-container` are no longer valid.
+
+## Additional resources
+
+- [Plexicus Dashboard](https://app.plexicus.ai/)
+- [Plexicus Documentation](https://docs.plexicus.ai/)
 - [Jenkins AnsiColor Plugin](https://plugins.jenkins.io/ansicolor/)
 - [Docker Documentation](https://docs.docker.com/)
-
-## 🤝 Support
-
-For support and questions:
-- Visit the [Plexicus Platform](https://app.plexicus.ai/)
-- Check the Jenkins console logs for detailed error information
-- Ensure all prerequisites are properly configured
