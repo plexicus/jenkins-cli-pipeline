@@ -84,10 +84,12 @@ All keys in this file (except the reserved `message_url` and `plexalyzer_token`)
 passed directly to the Plexalyzer CLI.  Use `excluded_tools` or `included_tools` to
 control which security tools run.
 
-**Valid tool names** (source: `shared/tool_bundle_params.py` `TOOL_CATEGORIES`):
+**Valid configuration values.** `excluded_tools` / `included_tools` accept the
+platform's internal engine identifiers — machine configuration values, not
+product names. Each identifier belongs to a branded Plexicus scanner bundle:
 
-| Category | Bundle | Individual tools |
-|----------|--------|-----------------|
+| Category | Bundle | Engine identifiers (config values) |
+|----------|--------|-------------------------------------|
 | SAST | `plexicus-sast` | `opengrep`, `bandit` |
 | SCA | `plexicus-sca` | `grype` |
 | Secrets | `plexicus-secrets` | `gitleaks`, `trufflehog` |
@@ -109,8 +111,8 @@ Example `custom_config.yml`:
 ```yaml
 # Exclude slow / environment-specific tools
 excluded_tools:
-  - strix       # pentest engine — requires network access
-  - cloudsploit # cloud scanner — only relevant for cloud config repos
+  - strix       # plexicus-pentest — requires network access
+  - cloudsploit # plexicus-cloud — only relevant for cloud config repos
 
 # Or restrict to specific tools only:
 # included_tools:
