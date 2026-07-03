@@ -10,38 +10,35 @@
 #
 #   Category    Bundle name           Tool names
 #   ----------  --------------------  ------------------------------------
-#   SAST        plexicus-sast         opengrep, bandit
-#   SCA         plexicus-sca          grype
-#   Secrets     plexicus-secrets      gitleaks, trufflehog
-#   Container   plexicus-container    trivy-container
-#   IaC         plexicus-iac          checkov-iac, checkov-configuration,
-#                                     checkov-container
-#   CI/CD       plexicus-cicd         checkov-ci/cd
-#   Cloud       plexicus-cloud        cloudsploit
-#   DAST        plexicus-dast         nuclei
-#   Pentest     plexicus-pentest      strix
-#   SBOM        plexicus-sbom         syft
-#   AI BOM      plexicus-aibom        cdxgen-mlbom
-#   Crypto BOM  plexicus-cbom         cdxgen-cbom, opengrep-crypto
-#   License     plexicus-license      trivy-license
-#   SCM         plexicus-scm          chainbench
-#   Registry    plexicus-registry     trivy-registry
+#   SAST          plexicus-sast
+#   SCA           plexicus-sca
+#   Secrets       plexicus-secrets
+#   Container     plexicus-container
+#   IaC           plexicus-iac
+#   CI/CD         plexicus-cicd
+#   Cloud         plexicus-cloud
+#   DAST          plexicus-dast
+#   Pentest       plexicus-pentest
+#   SBOM          plexicus-sbom
+#   AI BOM        plexicus-aibom
+#   Crypto BOM    plexicus-cbom
+#   License       plexicus-license
+#   SCM           plexicus-scm
+#   Registry      plexicus-registry
 #
 # You may use either individual tool names or bundle names in excluded_tools /
 # included_tools.
 
 # Tools to skip — remove entries you want to run.
 excluded_tools:
-  - strix          # Pentest engine: slow, requires network access
-  - cloudsploit    # Cloud security: only useful when scanning cloud configs
-  - cdxgen-mlbom   # AI/ML BOM: only relevant for ML projects
+  - plexicus-pentest          # Pentest engine: slow, requires network access
+  - plexicus-cloud    # Cloud security: only useful when scanning cloud configs
+  - plexicus-aibom   # AI/ML BOM: only relevant for ML projects
 
 # Uncomment and populate to restrict the scan to specific tools only.
 # included_tools:
-#   - opengrep
-#   - bandit
-#   - grype
-#   - gitleaks
-#   - trufflehog
-#   - trivy-license
-#   - syft
+#   - plexicus-sast
+#   - plexicus-sca
+#   - plexicus-secrets
+#   - plexicus-license
+#   - plexicus-sbom
