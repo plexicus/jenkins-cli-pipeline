@@ -120,20 +120,21 @@ pipeline {
 # Commit this file to .plexalyzer/custom_config.yml in your own repository.
 #
 # Valid individual tool names (shared/tool_bundle_params.py TOOL_CATEGORIES):
-#   SAST        : opengrep, bandit
-#   SCA         : grype
-#   Secrets     : gitleaks, trufflehog
-#   Container   : trivy-container
-#   IaC         : checkov-iac, checkov-configuration, checkov-container, checkov-ci/cd
-#   Cloud       : cloudsploit
-#   DAST        : nuclei
-#   Pentest     : strix
-#   SBOM        : syft
-#   AI BOM      : cdxgen-mlbom
-#   Crypto BOM  : cdxgen-cbom, opengrep-crypto
-#   License     : trivy-license
-#   SCM         : chainbench
-#   Registry    : trivy-registry
+#   SAST        : plexicus-sast
+#   SCA         : plexicus-sca
+#   Secrets     : plexicus-secrets
+#   Container   : plexicus-container
+#   IaC         : plexicus-iac
+#   CI/CD       : plexicus-cicd
+#   Cloud       : plexicus-cloud
+#   DAST        : plexicus-dast
+#   Pentest     : plexicus-pentest
+#   SBOM        : plexicus-sbom
+#   AI BOM      : plexicus-aibom
+#   Crypto BOM  : plexicus-cbom
+#   License     : plexicus-license
+#   SCM         : plexicus-scm
+#   Registry    : plexicus-registry
 #
 # excluded_tools: []   # skip specific tools
 # included_tools: []   # restrict scan to only these tools (empty = run all)

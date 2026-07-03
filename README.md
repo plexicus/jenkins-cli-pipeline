@@ -84,46 +84,45 @@ All keys in this file (except the reserved `message_url` and `plexalyzer_token`)
 passed directly to the Plexalyzer CLI.  Use `excluded_tools` or `included_tools` to
 control which security tools run.
 
-**Valid tool names** (source: `shared/tool_bundle_params.py` `TOOL_CATEGORIES`):
+**Valid configuration values.** `excluded_tools` / `included_tools` accept the
+branded Plexicus scanner bundle names:
 
-| Category | Bundle | Individual tools |
-|----------|--------|-----------------|
-| SAST | `plexicus-sast` | `opengrep`, `bandit` |
-| SCA | `plexicus-sca` | `grype` |
-| Secrets | `plexicus-secrets` | `gitleaks`, `trufflehog` |
-| Container | `plexicus-container` | `trivy-container` |
-| IaC | `plexicus-iac` | `checkov-iac`, `checkov-configuration`, `checkov-container` |
-| CI/CD | `plexicus-cicd` | `checkov-ci/cd` |
-| Cloud | `plexicus-cloud` | `cloudsploit` |
-| DAST | `plexicus-dast` | `nuclei` |
-| Pentest | `plexicus-pentest` | `strix` |
-| SBOM | `plexicus-sbom` | `syft` |
-| AI BOM | `plexicus-aibom` | `cdxgen-mlbom` |
-| Crypto BOM | `plexicus-cbom` | `cdxgen-cbom`, `opengrep-crypto` |
-| License | `plexicus-license` | `trivy-license` |
-| SCM | `plexicus-scm` | `chainbench` |
-| Registry | `plexicus-registry` | `trivy-registry` |
+| Category | Bundle |
+|----------|--------|
+| SAST | `plexicus-sast` |
+| SCA | `plexicus-sca` |
+| Secrets | `plexicus-secrets` |
+| Container | `plexicus-container` |
+| IaC | `plexicus-iac` |
+| CI/CD | `plexicus-cicd` |
+| Cloud | `plexicus-cloud` |
+| DAST | `plexicus-dast` |
+| Pentest | `plexicus-pentest` |
+| SBOM | `plexicus-sbom` |
+| License | `plexicus-license` |
+| AI BOM | `plexicus-aibom` |
+| Crypto BOM | `plexicus-cbom` |
+| SCM | `plexicus-scm` |
+| Registry | `plexicus-registry` |
 
 Example `custom_config.yml`:
 
 ```yaml
 # Exclude slow / environment-specific tools
 excluded_tools:
-  - strix       # pentest engine — requires network access
-  - cloudsploit # cloud scanner — only relevant for cloud config repos
+  - plexicus-pentest # requires network access
+  - plexicus-cloud   # only relevant for cloud config repos
 
 # Or restrict to specific tools only:
 # included_tools:
-#   - opengrep
-#   - bandit
-#   - grype
-#   - gitleaks
-#   - trivy-license
+#   - plexicus-sast
+#   - plexicus-sca
+#   - plexicus-secrets
+#   - plexicus-license
 ```
 
-> **Note:** The tool names `trivy-sbom`, `trivy-sca`, and `kics-container` were used in
-> older versions of Plexalyzer and are no longer valid. Use `syft`, `grype`, and
-> `checkov-container` respectively.
+> **Note:** Legacy per-engine names from older Plexalyzer versions are no longer
+> valid — use the `plexicus-*` bundle names above.
 
 ## Docker image
 
@@ -194,9 +193,8 @@ also echoed to the console.
   raw escape sequences in the console.
 
 **Tool name not recognised**
-- Use only tool names from the table above.  The names `trivy-sbom`, `trivy-sca`, and
-  `kics-container` are no longer valid.
-
+- Use only the `plexicus-*` bundle names from the table above. Legacy per-engine
+  names from older Plexalyzer versions are silently ignored.
 ## Additional resources
 
 - [Plexicus Dashboard](https://app.plexicus.ai/)
